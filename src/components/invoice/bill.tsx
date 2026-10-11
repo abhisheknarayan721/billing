@@ -68,7 +68,7 @@ const Bill = ({ invoice, toolbar = true }: BillProps) => {
 
   // Round-off is not stored; it is whatever rounding the total to the rupee
   // added or took away. Invoices saved before rounding existed come out as zero.
-  const roundOff = invoice.totalamount.sub(invoice.subtotal.sub(invoice.taxamount))
+  const roundOff = invoice.totalamount.sub(invoice.subtotal.add(invoice.taxamount))
 
   return (
     <div className="mx-auto w-full max-w-3xl print:max-w-none print:px-0 print:py-0">
@@ -233,8 +233,20 @@ const Bill = ({ invoice, toolbar = true }: BillProps) => {
           {/* Totals and footer move as one block: if they do not fit under the
               last items, both go to the next page rather than splitting. */}
           <div className="print:break-inside-avoid">
-            <div className="mt-4 flex justify-end">
-              <dl className="w-full max-w-xs space-y-1 text-xs">
+            <div className="mt-4 flex items-end justify-between gap-2 sm:gap-4">
+              <figure className="flex shrink-0 flex-col items-center gap-1">
+                <Image
+                  src="/images/qr-code.jpg"
+                  alt="Payment QR code"
+                  width={112}
+                  height={112}
+                  className="h-20 w-20 object-contain sm:h-28 sm:w-28"
+                />
+                <figcaption className="text-center text-[10px] text-slate-500">
+                  Scan to pay
+                </figcaption>
+              </figure>
+              <dl className="w-full min-w-0 max-w-xs space-y-1 text-xs">
                 <div className="flex justify-between px-3">
                   <dt className="text-slate-600">Subtotal</dt>
                   <dd className="tabular-nums">{formatMoney(invoice.subtotal)}</dd>

@@ -210,6 +210,16 @@ export function findInvoices(search?: ListSearch) {
   })
 }
 
+export function findInvoicesPage(search: ListSearch, skip: number, take: number) {
+  return prisma.invoice.findMany({
+    where: toInvoiceWhere(search),
+    orderBy: { inv_id: 'desc' },
+    skip,
+    take,
+    include: { invoice_item: true },
+  })
+}
+
 export function findInvoiceById(id: number) {
   return prisma.invoice.findUnique({
     where: { inv_id: id },

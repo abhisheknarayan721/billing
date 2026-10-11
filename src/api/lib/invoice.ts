@@ -169,9 +169,9 @@ export function computeTotals(values: InvoiceValues): InvoiceTotals {
     ? cgstamount.add(sgstamount)
     : new Prisma.Decimal(values.taxamount === '' ? 0 : values.taxamount).toDecimalPlaces(2)
 
-  // GST is subtracted from the subtotal, not added. The grand total is rounded
-  // to the nearest whole rupee (half up). The round-off is not stored: it is
-  // always totalamount - (subtotal - taxamount).
+  // GST is added to the subtotal. The grand total is rounded to the nearest
+  // whole rupee (half up). The round-off is not stored: it is always
+  // totalamount - (subtotal + taxamount).
   return {
     lines,
     subtotal,
@@ -180,6 +180,6 @@ export function computeTotals(values: InvoiceValues): InvoiceTotals {
     sgstrate: commonRate(lines.map((line) => line.sgstrate)),
     sgstamount,
     taxamount,
-    totalamount: subtotal.sub(taxamount).toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP),
+    totalamount: subtotal.add(taxamount).toDecimalPlaces(0, Prisma.Decimal.ROUND_HALF_UP),
   }
 }

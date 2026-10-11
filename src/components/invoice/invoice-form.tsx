@@ -143,9 +143,9 @@ const InvoiceForm = ({
   const cgstCents = taxCentsOf('cgstrate')
   const sgstCents = taxCentsOf('sgstrate')
   const taxCents = cgstCents + sgstCents
-  // Same rule as the server: GST is subtracted from the subtotal, and the
-  // total is rounded to the nearest whole rupee.
-  const unroundedCents = subtotalCents - taxCents
+  // Same rule as the server: GST is added to the subtotal, and the total is
+  // rounded to the nearest whole rupee.
+  const unroundedCents = subtotalCents + taxCents
   const totalCents = Math.round(unroundedCents / 100) * 100
   const roundOffCents = totalCents - unroundedCents
 

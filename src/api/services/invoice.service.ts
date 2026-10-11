@@ -7,6 +7,7 @@ import {
   findInvoiceById,
   findInvoiceNumbers,
   findInvoices,
+  findInvoicesPage as findInvoicePage,
   findInvoicesForPrint,
   findLastInvoiceNumber,
   insertInvoice,
@@ -83,6 +84,10 @@ export async function editInvoice(id: number, input: Record<string, unknown>) {
 
 export async function listInvoices(search?: ListSearch) {
   return findInvoices(search)
+}
+
+export async function listInvoicePage(search: ListSearch, skip: number, take: number) {
+  return findInvoicePage(search, skip, take)
 }
 
 /** Suggests the next number by incrementing the trailing digits of the last one. */
