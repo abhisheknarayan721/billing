@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model product {
+  p_id         Int                   @id @default(autoincrement())
+  p_name       String                @db.VarChar(100)
+  p_price      Decimal?              @db.Decimal(18, 2)
+  p_mrp        Decimal?              @db.Decimal(18, 2)
+  /// GST rates in percent, e.g. 9.00 for 9%.
+  p_cgst       Decimal               @default(0) @db.Decimal(5, 2)
+  p_sgst       Decimal               @default(0) @db.Decimal(5, 2)
+  p_stock      Int?                  @default(0)
+  createddate  DateTime?             @db.Timestamp(6)
+  updateddate  DateTime?             @db.Timestamp(6)
+  invoice_item invoice_item[]
+  purchase     purchase[]
+  order_item   retailer_order_item[]
+}
+
+model purchase {
+  pur_id        Int       @id @default(autoincrement())
+  purchasedby   String?   @db.VarChar(250)
+  p_id          Int?
+  productname   String?   @db.VarChar(250)
+  quantity      Int?
+  unitprice     Decimal?  @db.Decimal(18, 2)
+  totalamount   Decimal?  @db.Decimal(18, 2)
+  invoicenumber String?   @db.VarChar(100)
+  invoicedate   DateTime? @db.Timestamp(6)
+  status        String?   @db.VarChar(50)
+  createddate   DateTime? @db.Timestamp(6)
+  updateddate   DateTime? @db.Timestamp(6)
+  product       product?  @relation(fields: [p_id], references: [p_id], onUpdate: NoAction)
+
+  @@index([p_id], map: "idx_purchase_p_id")
+}
+
+model retailer {
+  ret_id        Int              @id @default(autoincrement())
+  retailername  String           @db.VarChar(250)
+  contactperson String?          @db.VarChar(250)
+  phonenumber   String?          @db.VarChar(50)
+  email         String?          @db.VarChar(250)
+  address       String?
+  city          String?          @db.VarChar(100)
+  state         String?          @db.VarChar(100)
+  country       String?          @default("India") @db.VarChar(100)
+  postalcode    String?          @db.VarChar(8)
+  taxnumber     String?          @db.VarChar(100)
+  createddate   DateTime?        @db.Timestamp(6)
+  updateddate   DateTime?        @db.Timestamp(6)
+  invoice       invoice[]
+  orders        retailer_order[]
+}
+
+model supplier {
+  sup_id        Int       @id @default(autoincrement())
+  suppliername  String    @db.VarChar(250)
+  contactperson String?   @db.VarChar(250)
+  phonenumber   String?   @db.VarChar(50)
+  email         String?   @db.VarChar(250)
+  address       String?
+  city          String?   @db.VarChar(100)
+  state         String?   @db.VarChar(100)
+  country       String?   @default("India") @db.VarChar(100)
+  postalcode    String?   @db.VarChar(8)
+  taxnumber     String?   @db.VarChar(100)
+  createddate   DateTime? @db.Timestamp(6)
+  updateddate   DateTime? @db.Timestamp(6)
+}
+
+model invoice {
+  inv_id        Int            @id @default(autoincrement())
+  invoicenumber String         @unique @db.VarChar(100)
+  invoicedate   DateTime       @db.Timestamp(6)
+  ret_id        Int?
+  billto        String         @db.VarChar(250)
+  billtoaddress String?
+  subtotal      Decimal        @default(0) @db.Decimal(18, 2)
+  taxamount     Decimal        @default(0) @db.Decimal(18, 2)
+  cgstrate      Decimal        @default(0) @db.Decimal(5, 2)
+  cgstamount    Decimal        @default(0) @db.Decimal(18, 2)
+  sgstrate      Decimal        @default(0) @db.Decimal(5, 2)
+  sgstamount    Decimal        @default(0) @db.Decimal(18, 2)
+  totalamount   Decimal        @default(0) @db.Decimal(18, 2)
+  status        String         @default("Draft") @db.VarChar(50)
+  createddate   DateTime?      @db.Timestamp(6)
+  updateddate   DateTime?      @db.Timestamp(6)
+  retailer      retailer?      @relation(fields: [ret_id], references: [ret_id], onUpdate: NoAction)
+  invoice_item  invoice_item[]
+}
+
+model invoice_item {
+  item_id     Int      @id @default(autoincrement())
+  inv_id      Int
+  p_id        Int?
+  productname String   @db.VarChar(250)
+  quantity    Int
+  unitprice   Decimal  @db.Decimal(18, 2)
+  /// The product's MRP when the invoice was saved, so changing the product
+  /// later does not rewrite old bills. Null when the product has no MRP.
+  mrp         Decimal? @db.Decimal(18, 2)
+  /// GST rates in percent, charged on this line's amount. Filled from the
+  /// product when it is picked, and editable on the invoice.
+  cgstrate    Decimal  @default(0) @db.Decimal(5, 2)
+  sgstrate    Decimal  @default(0) @db.Decimal(5, 2)
+  linetotal   Decimal  @db.Decimal(18, 2)
+  invoice     invoice  @relation(fields: [inv_id], references: [inv_id], onDelete: Cascade, onUpdate: NoAction)
+  product     product? @relation(fields: [p_id], references: [p_id], onUpdate: NoAction)
+
+  @@index([inv_id], map: "idx_invoice_item_inv_id")
+}
+
+/// A payment received from (or made to) a supplier or retailer. `pay_name`
+/// stores the party's name as text, not a foreign key, so a payment keeps the
+/// name it was recorded under even if the party is later renamed.
+model payment {
+  pay_id      Int       @id @default(autoincrement())
+  pay_name    String    @db.VarChar(100)
+  pay_amt     Decimal?  @db.Decimal(18, 2)
+  pay_method  String?   @db.VarChar(100)
+  createddate DateTime? @db.Timestamp(6)
+  updateddate DateTime? @db.Timestamp(6)
+}
+
+/// Someone allowed to sign in. Accounts are created from the command line
+/// (`npm run user:create`); there is no public sign-up page. The password is
+/// stored as plain text, by the owner's choice.
+model app_user {
+  user_id     Int       @id @default(autoincrement())
+  username    String    @unique @db.VarChar(100)
+  fullname    String?   @db.VarChar(250)
+  password    String    @db.VarChar(255)
+  /// 'admin' sees everything; 'user' sees only retailer orders. See
+  /// src/lib/auth/roles.ts.
+  role        String    @default("admin") @db.VarChar(20)
+  createddate DateTime? @db.Timestamp(6)
+  updateddate DateTime? @db.Timestamp(6)
+}
+
+/// An order a retailer has placed, recorded before the goods are invoiced.
+/// Orders never move stock: only the invoice raised for them does. Named
+/// `retailer_order` because ORDER is a reserved word in SQL.
+model retailer_order {
+  ord_id       Int                   @id @default(autoincrement())
+  ordernumber  String                @unique @db.VarChar(100)
+  orderdate    DateTime              @db.Timestamp(6)
+  ret_id       Int?
+  /// The retailer's name when the order was taken, so the order still reads
+  /// correctly if the retailer is later renamed or removed.
+  retailername String                @db.VarChar(250)
+  notes        String?
+  totalamount  Decimal               @default(0) @db.Decimal(18, 2)
+  status       String                @default("Pending") @db.VarChar(50)
+  createddate  DateTime?             @db.Timestamp(6)
+  updateddate  DateTime?             @db.Timestamp(6)
+  retailer     retailer?             @relation(fields: [ret_id], references: [ret_id], onUpdate: NoAction)
+  order_item   retailer_order_item[]
+
+  @@index([ret_id], map: "idx_retailer_order_ret_id")
+}
+
+model retailer_order_item {
+  item_id     Int            @id @default(autoincrement())
+  ord_id      Int
+  p_id        Int?
+  productname String         @db.VarChar(250)
+  quantity    Int
+  unitprice   Decimal        @db.Decimal(18, 2)
+  linetotal   Decimal        @db.Decimal(18, 2)
+  order       retailer_order @relation(fields: [ord_id], references: [ord_id], onDelete: Cascade, onUpdate: NoAction)
+  product     product?       @relation(fields: [p_id], references: [p_id], onUpdate: NoAction)
+
+  @@index([ord_id], map: "idx_retailer_order_item_ord_id")
+}

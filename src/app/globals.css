@@ -1,0 +1,195 @@
+@import "tailwindcss";
+
+/*
+ * The app is drawn on a light palette throughout (white cards, slate text), so
+ * the page colours are fixed rather than following the OS dark-mode setting —
+ * a dark body under white cards reads as broken, not themed.
+ */
+:root {
+  --background: #f5f7fb;
+  --foreground: #0f172a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * Shared building blocks. Pages compose these instead of repeating long
+ * utility strings, so buttons, inputs, cards and tables stay consistent.
+ */
+@layer components {
+  .page {
+    @apply mx-auto w-full max-w-6xl;
+  }
+
+  .page-header {
+    @apply mb-6 flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold tracking-tight text-slate-900;
+  }
+
+  .card {
+    @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/60;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-sky-500 to-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-sky-600/30 transition hover:from-sky-600 hover:to-sky-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-400 disabled:shadow-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .link {
+    @apply font-medium text-sky-600 hover:text-sky-700 hover:underline;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:bg-slate-100 aria-[invalid=true]:border-red-400 aria-[invalid=true]:ring-red-100;
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+
+  .filter-bar {
+    @apply mb-6 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm shadow-slate-200/60;
+  }
+
+  /* Tables scroll sideways inside their card on narrow screens. */
+  .table-card {
+    @apply overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-200/60;
+  }
+
+  .data-table {
+    @apply w-full min-w-max border-collapse text-sm;
+  }
+
+  .data-table thead tr {
+    @apply bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500;
+  }
+
+  .data-table th {
+    @apply border-b border-slate-200 px-4 py-3 font-semibold;
+  }
+
+  .data-table td {
+    @apply border-b border-slate-100 px-4 py-3 text-slate-700;
+  }
+
+  .data-table tbody tr {
+    @apply transition-colors hover:bg-sky-50/40;
+  }
+
+  .data-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .data-table tfoot td {
+    @apply border-t border-b-0 border-slate-200 bg-slate-50 text-slate-900;
+  }
+
+  .alert-success {
+    @apply rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800;
+  }
+
+  .alert-error {
+    @apply rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800;
+  }
+
+  .empty-state {
+    @apply rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-sm text-slate-500;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  /*
+    Bills print on their own named page with no top or bottom margin. The
+    browser writes its header (date, title) and footer (URL, page number) into
+    those margins, so with none there is nowhere to put them. The bill puts the
+    same 14mm back as padding, and box-decoration-break repeats that padding on
+    every page a long bill runs onto, not just the first and last.
+
+    Printed reports (e.g. the product list) use the same page, so they carry
+    their own heading in place of the browser's.
+  */
+  @page bill {
+    size: A4;
+    margin: 0 14mm;
+  }
+
+  .bill-sheet,
+  .report-sheet {
+    page: bill;
+    padding-block: 14mm;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+  }
+
+  body {
+    background: #ffffff;
+    color: #171717;
+  }
+
+  /* Cards and tables print as plain paper: no frames, shadows or scrolling. */
+  .card,
+  .table-card {
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+    border-radius: 0;
+  }
+
+  .data-table {
+    min-width: 0;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding-left: 0;
+    padding-right: 0.5rem;
+  }
+
+  .data-table thead tr,
+  .data-table tfoot td {
+    background: transparent;
+  }
+
+  /* Repeat the table head on every sheet and never split a row across pages. */
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  img {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}
